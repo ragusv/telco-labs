@@ -1,0 +1,628 @@
+tosca_definitions_version: tosca_simple_yaml_1_0 # tosca_simple_yaml_1_2
+description: VMware custom definition for vnfd 1.0.0
+
+imports:
+  - etsi_nfv_sol001_vnfd_2_7_1_types.yaml
+
+data_types:
+  tosca.datatypes.nfv.L3AddressData:
+    derived_from: tosca.datatypes.Root
+    description: Provides information about Layer 3 level addressing scheme and parameters applicable to a CP 
+    properties:
+      ip_address_assignment:
+        type: boolean
+        description: Specifies if the address assignment is the responsibility of management and orchestration function or not. If it is set to True, it is the management and orchestration function responsibility
+        required: true
+      floating_ip_activated:
+        type: boolean
+        description: Specifies if the floating IP scheme is activated on the Connection Point or not 
+        required: true
+      ip_address_type:
+        type: string
+        description: Defines address type. The address type should be aligned with the address type supported by the layer_protocols properties of the parent VnfExtCp
+        required: false
+        constraints:
+          - valid_values: [ ipv4, ipv6 ]
+      number_of_ip_address:
+        type: integer
+        description: Minimum number of IP addresses to be assigned 
+        required: false
+        constraints:
+          - greater_than: 0
+      fixed_ip_address: #VMware change to support static IP address
+        type: list
+        description: Static IP address
+        entry_schema:
+          type: string
+        required: false
+
+  tosca.datatypes.nfv.L3ProtocolData:
+    derived_from: tosca.datatypes.Root
+    description: describes L3 protocol data for a given virtual link used in a specific VNF deployment flavour.
+    properties:
+      name:
+        type: string
+        description: Identifies the network name associated with this L3 protocol.
+        required: false
+      ip_version:
+        type: string
+        description: Specifies IP version of this L3 protocol.The value of the ip_version property shall be consistent with the value of the layer_protocol in the connectivity_type property of the virtual link node.
+        required: true
+        constraints:
+          - valid_values: [ ipv4, ipv6 ]
+      cidr:
+        type: string
+        description: Specifies the CIDR (Classless Inter-Domain Routing) of this L3 protocol. The value may be overridden at run-time.
+        required: true  
+      ip_allocation_pools:
+        type: list
+        description: Specifies the allocation pools with start and end IP addresses for this L3 protocol. The value may be overridden at run-time.
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.IpAllocationPool
+      gateway_ip:
+        type: string
+        description: Specifies the gateway IP address for this L3 protocol. The value may be overridden at run-time.
+        required: false
+      dhcp_enabled:
+        type: boolean
+        description: Indicates whether DHCP (Dynamic Host Configuration Protocol) is enabled or disabled for this L3 protocol. The value may be overridden at run-time.
+        required: false
+      external:
+        type: boolean
+        description: Indicates whether network needs external connectivity. #VMware change
+        required: false
+        default: false
+      ipv6_address_mode:
+        type: string
+        description: Specifies IPv6 address mode. May be present when the value of the ipVersion attribute is "ipv6" and shall be absent otherwise. The value may be overridden at run-time.
+        required: false
+        constraints:
+          - valid_values: [ slaac, dhcpv6-stateful, dhcpv6-stateless ]
+    
+node_types:
+
+  tosca.nodes.nfv.VMware.VNF: # VMware change
+    derived_from: tosca.nodes.nfv.VNF
+    description: The generic abstract type from which all VNF specific abstract node types shall be derived to form, together with other node types, the TOSCA service template(s) representing the VNFD
+    properties:
+      descriptor_id: # instead of vnfd_id
+        type: string # GUID
+        description: Globally unique identifier of the VNFD
+        required: true
+      descriptor_version: # instead of vnfd_version
+        type: string
+        description: Identifies the version of the VNFD
+        required: true
+      provider: # instead of vnf_provider
+        type: string
+        description: Provider of the VNF and of the VNFD
+        required: true
+      product_name: # instead of vnf_product_name
+        type: string
+        description: Human readable name for the VNF Product
+        required: true
+      software_version: # instead of vnf_software_version
+        type: string
+        description: Software version of the VNF
+        required: true
+      product_info_name: # instead of vnf_product_info_name
+        type: string
+        description: Human readable name for the VNF Product
+        required: false
+      product_info_description: # instead of vnf_product_info_description
+        type: string
+        description: Human readable description of the VNF Product
+        required: false
+      vnfm_info:
+        type: list
+        required: true
+        description: Identifies VNFM(s) compatible with the VNF
+        entry_schema:
+          type: string
+      localization_languages:
+        type: list
+        description: Information about localization languages of the VNF
+        required: false
+        entry_schema:
+          type: string #IETF RFC 5646 string
+      default_localization_language:
+        type: string #IETF RFC 5646 string
+        description: Default localization language that is instantiated if no information about selected localization language is available
+        required: false
+      #configurable_properties:
+        #type: tosca.datatypes.nfv.VnfConfigurableProperties
+        #description: Describes the configurable properties of the VNF
+        #required: false
+        # derived types are expected to introduce configurable_properties 
+        # with its type derived from 
+        # tosca.datatypes.nfv.VnfConfigurableProperties
+      #modifiable_attributes:
+        #type: tosca.datatypes.nfv.VnfInfoModifiableAttributes
+        #description: Describes the modifiable attributes of the VNF
+        #required: false 
+        # derived types are expected to introduce modifiable_attributes
+        # with its type derived from
+        # tosca.datatypes.nfv.VnfInfoModifiableAttributes
+      lcm_operations_configuration:
+        type: tosca.datatypes.nfv.VnfLcmOperationsConfiguration
+        description: Describes the configuration parameters for the VNF LCM operations
+        required: false
+      monitoring_parameters:
+        type: list
+        entry_schema:
+          type: tosca.datatypes.nfv.VnfMonitoringParameter
+        description: Describes monitoring parameters applicable to the VNF.
+        required: false
+      flavour_id:
+        type: string
+        description: Identifier of the Deployment Flavour within the VNFD
+        required: true
+      flavour_description:
+        type: string
+        description: Human readable description of the DF
+        required: true
+      #vnf_profile:
+      #  type: tosca.datatypes.nfv.VnfProfile
+      #  description: Describes a profile for instantiating VNFs of a particular NS DF according to a specific VNFD and VNF DF
+      #  required: false
+      id:
+        type: string
+        description: Identifier of the VNF
+        required: false
+      vendor:
+        type: string
+        description: Vendor of the VNF
+        required: false
+      version:
+        type: string
+        description: Version of the VNF
+        required: false
+      description:
+        type: string
+        description: Description of the VNF
+        required: false
+    requirements:
+      - virtual_link:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+  # Additional requirements shall be defined in the VNF specific node type (deriving from tosca.nodes.nfv.VNF) corresponding to NS virtual links that need to connect to VnfExtCps
+    interfaces:
+      Vnflcm:
+        type: tosca.interfaces.nfv.VMware.Vnflcm
+
+  tosca.datatypes.nfv.VMware.KernelType:
+    derived_from: tosca.datatypes.Root
+    description: Data type definition describing kernel type
+    properties:
+      name:
+        description: name of the kernel
+        type: string
+        required: true
+      version:
+        description: version of the kernel
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.KernelModules:
+    derived_from: tosca.datatypes.Root
+    description: Kernel modules
+    properties:
+      name:
+        description: name of the kernel module
+        type: string
+        required: true
+      version:
+        description: version of the kernel module
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.KernelArgs:
+    derived_from: tosca.datatypes.Root
+    description: Kernel arguments under kernel data type
+    properties:
+      key:
+        description: key of kernel arguments
+        type: string
+        required: true
+      value:
+        description: value of kernel arguments
+        type: string
+        required: false
+
+  tosca.datatypes.nfv.VMware.CustomPackages:
+    derived_from: tosca.datatypes.Root
+    description: Custom packages under kernel data type
+    properties:
+      name:
+        description: name of the custom package
+        type: string
+        required: true
+      version:
+        description: version of the custom package
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.Kernel:
+    derived_from: tosca.datatypes.Root
+    description: Data definition describing Kernel related configs
+    properties:
+      dpdkVersion:
+        description: Custom rule to validate dpdk and kernel version compatibility
+        type: boolean
+        required: false
+      kernel_type:
+        description: kernel type
+        type: tosca.datatypes.nfv.VMware.KernelType
+        required: false
+      kernel_modules:
+        description: kernel modules
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.KernelModules
+      kernel_args:
+        description: kernel arguments
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.KernelArgs
+      custom_packages:
+        description: custom packages
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.CustomPackages
+
+  tosca.datatypes.nfv.VMware.AdditionalConfig:
+    derived_from: tosca.datatypes.Root
+    description: Additional Config under Node components
+    properties:
+      name:
+        description: Name of the additional config
+        type: string
+        required: true
+      value:
+        description: Value of the additional config
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.FileInjection:
+    derived_from: tosca.datatypes.Root
+    description: File injection under Node components
+    properties:
+      source:
+        description: source of the file injection
+        type: string
+        required: true
+      content:
+        description: content of the file injection
+        type: string
+        required: true
+      path:
+        description: path of the file injection
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.ValuesRules:
+    derived_from: tosca.datatypes.Root
+    description: PTP value rules
+    properties:
+      source:
+        description: Value rules source
+        type: string
+        required: true
+        constraints:
+          - valid_values: [file, input]
+      content:
+        description: Value rules content
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.Ptp:
+    derived_from: tosca.datatypes.Root
+    description: PTP configuration under Node components
+    properties:
+      ptp4l:
+        description: PTP4L configuration
+        type: tosca.datatypes.nfv.VMware.ValuesRules
+        required: false
+      phc2sys:
+        description: PHC2SYS configuration
+        type: tosca.datatypes.nfv.VMware.ValuesRules
+        required: false
+
+  tosca.datatypes.nfv.VMware.AdditionalProperties:
+    derived_from: tosca.datatypes.Root
+    description: Additional configurations for network adapters
+    properties:
+      ctxPerDev:
+        description: Context per device
+        type: integer
+        required: false
+        constraints:
+          - greater_or_equal: 1
+          - less_or_equal: 3
+      mtu:
+        description: Label to provide network MTU during instantiation
+        type: string
+        required: false
+
+  tosca.datatypes.nfv.VMware.Devices:
+    derived_from: tosca.datatypes.Root
+    description: Devices under network
+    properties:
+      deviceType:
+        description: Device type
+        type: string
+        required: true
+        constraints:
+          - valid_values: [sriov, vmxnet3]
+      networkName:
+        description: Network name
+        type: string
+        required: true
+      resourceName:
+        description: Resource name
+        type: string
+        required: true
+      dpdkBinding:
+        description: DPDK binding
+        type: string
+        required: false
+        constraints:
+          - valid_values: [igb_uio, vfio-pci]
+      targetDriver:
+        description: Target driver
+        type: string
+        required: false
+        constraints:
+          - valid_values: [igb_uio, vfio-pci]
+      interfaceName:
+        description: Interface name
+        type: string
+        required: false
+      count:
+        description: count
+        type: integer
+        required: false
+        constraints:
+          - greater_or_equal: 1
+          - less_or_equal: 16
+      isSharedAcrossNuma:
+        description: Set to true if this network device is shared across NUMA
+        type: boolean
+        required: false
+      pf_group:
+        description: PF group
+        type: string
+        required: false
+      additionalProperties:
+        description: ENS configuration
+        type: tosca.datatypes.nfv.VMware.AdditionalProperties
+        required: false
+
+  tosca.datatypes.nfv.VMware.Network:
+    derived_from: tosca.datatypes.Root
+    description: Network configs under Node components
+    properties:
+      devices:
+        description: Network devices
+        type: list
+        required: true
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.Devices
+
+  tosca.datatypes.nfv.VMware.PassthroughDevices:
+    derived_from: tosca.datatypes.Root
+    description: Passthrough devices under Node components
+    properties:
+      device_type:
+        description: Type of passthrough devices
+        type: string
+        required: true
+        constraints:
+          - valid_values: [NIC, PTP, ACC100]
+      pf_group:
+        description: PF group of passthrough devices
+        type: string
+        required: true
+      isSharedAcrossNuma:
+        description: Set to true if this network device is shared across NUMA
+        type: boolean
+        required: false
+      interfaceName:
+        description: Interface name of passthrough devices
+        type: string
+        required: false
+      resourceName:
+        description: Resource name of the passthrough devices
+        type: string
+        required: false
+      count:
+        description: Count of the passthrough devices
+        type: integer
+        required: false
+        constraints:
+          - greater_or_equal: 1
+      targetDriver:
+        description: Target driver of the passthrough devices
+        type: string
+        required: false
+        constraints:
+          - valid_values: [igb_uio, vfio_pci]
+
+  tosca.datatypes.nfv.VMware.Services:
+    derived_from: tosca.datatypes.Root
+    description: Systemd services under Node components
+    properties:
+      name:
+        type: string
+        required: true
+        constraints:
+          - valid_values: [stalld, syslog-ng]
+      serviceConfigFiles:
+        description: service configuration files
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.ServiceConfigFiles
+
+  tosca.datatypes.nfv.VMware.ServiceConfigFiles:
+    derived_from: tosca.datatypes.Root
+    description: Config Files for Systemd services under Services
+    properties:
+      name:
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.NodeComponents:
+    derived_from: tosca.datatypes.Root
+    description: Node components describes information related to kernel, passthrough devices, ptp and network
+    properties:
+      isNumaConfigNeeded:
+        description: Provides option to toggle Numa config
+        type: boolean
+        required: false
+        default: false
+      enableSMT:
+        description: Provides option to toggle SMT config
+        type: boolean
+        required: false
+        default: false
+      latestVmHardwareVersion:
+        description: Provides option to upgrade VM hardware to latest version
+        type: boolean
+        required: false
+        default: false
+      latency_sensitivity:
+        description: Provides option to modify latency sensitivity
+        type: string
+        required: false
+        constraints:
+          - valid_values: [low, high]
+      iommuEnabled:
+        description: Provides option to toggle I/O MMU config
+        type: boolean
+        required: false
+      kernel:
+        description: kernel parameters
+        type: tosca.datatypes.nfv.VMware.Kernel
+        required: false
+      additional_config:
+        description: additional configs
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.AdditionalConfig
+      file_injection:
+        description: file injection
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.FileInjection
+      ptp:
+        description: ptp configuration
+        type: tosca.datatypes.nfv.VMware.Ptp
+        required: false
+      network:
+        description: network configuration
+        type: tosca.datatypes.nfv.VMware.Network
+        required: false
+      passthrough_devices:
+        description: passthrough devices configuration
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.PassthroughDevices
+      services:
+        description: systemd services configuration
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.Services
+
+  tosca.datatypes.nfv.VMware.CaasComponents:
+    derived_from: tosca.datatypes.Root
+    description: CAAS components is VMware custom data type
+    properties:
+      name:
+        description: Name of the CAAS component
+        type: string
+        required: true
+      type:
+        description: Type of the CAAS component
+        type: string
+        required: true
+
+  tosca.datatypes.nfv.VMware.InfraRequirements:
+    derived_from: tosca.datatypes.Root
+    description: Infra Requirements is a VMware custom data type required for CNFs
+    properties:
+      node_components:
+        description: Node componenets describes information related to kernel, passthrough devices, ptp & network
+        type: tosca.datatypes.nfv.VMware.NodeComponents
+        required: false
+      caas_components:
+        description: CAAS components
+        type: list
+        required: false
+        entry_schema:
+          type: tosca.datatypes.nfv.VMware.CaasComponents
+
+  tosca.nodes.nfv.VMware.CNF: # VMware change
+    derived_from: tosca.nodes.nfv.VMware.VNF
+    description: The generic abstract type from which all CNF specific abstract node types shall be derived to form, together with other node types, the TOSCA service template(s) representing the CNFD
+    properties:
+      infra_requirements:
+        type: tosca.datatypes.nfv.VMware.InfraRequirements
+        description: Infrastructure requirements that's provided for CNFs specifically
+        required: false
+
+  tosca.nodes.nfv.Vdu.Compute.Helm:
+    derived_from: tosca.nodes.nfv.Vdu.Compute
+    description: The generic Helm abstract type from which all CNFs
+    properties:
+      chartName: 
+        type: string 
+        description: Helm Chart Name
+        required: true
+      chartVersion:
+        type: string 
+        description: Helm Chart Version
+        required: true
+      helmVersion:
+        type: string 
+        description: Helm Chart Version
+        required: true
+        default: v3
+      vdu_profile:
+        type: string
+        description: Helm Chart VDU profile override to required as False
+        required: false
+  tosca.nodes.nfv.VMware.CnfCp:
+    derived_from: tosca.nodes.nfv.VduCp
+    description: Describes the information about an CNF CP 
+    properties:
+      configurable_properties:
+        type: tosca.datatypes.nfv.VnfcConfigurableProperties
+        required: true
+
+policy_types:
+  tosca.policies.nfv.VMware.SupportedVnfInterface:
+    derived_from: tosca.policies.nfv.SupportedVnfInterface
+    description: VMware custom SupportedVnfInterface datatype implementation
+    properties:
+      interface_name:
+        type: string
+        description: Identifies an interface produced by the VMware VNF/CNF.
+        required: false
+      interface_type:
+        type: string
+        description: Describes the interface type used by the interface
+        required: false
+      isEnabled:
+        type: boolean
+        description: Gives information whether this interface is enabled or not
+        required: false

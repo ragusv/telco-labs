@@ -1,0 +1,25 @@
+# if ueransim is running on same cluster as open5gs, just use svc name for amf-ngap service (k get svc -n open5gs | grep amf-ngap)
+# if external service is required (ueransim on different cluster), then use ip address of open5gs worker node ip (NodePort used to expose amf-ngap in open5gs cluster)
+#
+amf:
+  ip: 192.168.1.155
+  port: 38412
+  # adapt hostname to real service name
+  hostname: open5gs-amf-ngap
+
+# if separate int will not be used, just comment&delete lines and pod annotations
+interfaces:
+  n3:
+    dev: net1
+podAnnotations: { k8s.v1.cni.cncf.io/networks: '[ { "name": "n3","ips": [ "192.168.2.230" ] } ]' }
+
+mcc: '999'
+mnc: '70'
+sst: 1
+sd: "0x111111"
+tac: '0001'
+
+ues:
+  enabled: true
+  count: 2
+  

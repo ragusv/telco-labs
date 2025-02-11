@@ -1,0 +1,183 @@
+{
+  "id": "terminate_end",
+  "name": "TerminateEnd",
+  "implementation": "../Artifacts/workflows/_Artifacts_workflows_TerminateEnd-1664133968287 (1).json",
+  "description": "",
+  "version": "1.0",
+  "schemaVersion": "2.0",
+  "startStep": "step1",
+  "variables": [
+    {
+      "name": "vnfId",
+      "type": "string",
+      "description": "Value would be assigned by the system during workflow execution",
+      "default": "null",
+      "required": false
+    },
+    {
+      "name": "NAD_FILE_PATH",
+      "type": "string",
+      "default": "/tmp/nad_ueran.yaml",
+      "description": "",
+      "required": false
+    }
+  ],
+  "input": [
+    {
+      "name": "USER",
+      "description": "Username",
+      "type": "string",
+      "default": "{{vim.k8sCluster.masterNode.username}}",
+      "required": true
+    },
+    {
+      "name": "PWD",
+      "description": "Password",
+      "type": "password",
+      "default": "e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=",
+      "required": true
+    },
+    {
+      "name": "IP",
+      "description": "Hostname",
+      "type": "string",
+      "default": "{{vim.k8sCluster.masterNode.ip}}",
+      "required": true
+    },
+    {
+      "name": "K8S_NAMESPACE",
+      "type": "string",
+      "default": "ueran",
+      "description": "",
+      "required": true
+    }
+  ],
+  "output": [
+    {
+      "name": "FINAL_OUTPUT",
+      "description": "Final Output",
+      "type": "string",
+      "default": "null",
+      "required": false
+    },
+    {
+      "name": "nsDeleteResult",
+      "type": "string",
+      "default": "null",
+      "description": "",
+      "required": false
+    },
+    {
+      "name": "nadDeleteResult",
+      "type": "string",
+      "default": "null",
+      "description": "",
+      "required": false
+    }
+  ],
+  "steps": [
+    {
+      "workflow": "RUN_SSH_COMMAND_IN_GUEST",
+      "namespace": "nfv",
+      "inBinding": [
+        {
+          "name": "cmd",
+          "type": "string",
+          "default": "kubectl delete -n {{K8S_NAMESPACE}} -f  {{NAD_FILE_PATH}}"
+        },
+        {
+          "name": "hostNameOrIP",
+          "type": "string",
+          "exportName": "IP"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "exportName": "USER"
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "exportName": "PWD"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "default": "22"
+        },
+        {
+          "name": "passwordAuthentication",
+          "type": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "default": " "
+        }
+      ],
+      "outBinding": [
+        {
+          "name": "result",
+          "type": "string",
+          "exportName": "nadDeleteResult"
+        }
+      ],
+      "stepId": "step1",
+      "description": "delete NAD",
+      "nextStep": "step0"
+    },
+    {
+      "stepId": "step0",
+      "workflow": "RUN_SSH_COMMAND_IN_GUEST",
+      "namespace": "nfv",
+      "type": "task",
+      "description": "delete ueran ns",
+      "inBinding": [
+        {
+          "name": "cmd",
+          "type": "string",
+          "default": "kubectl delete ns {{K8S_NAMESPACE}}"
+        },
+        {
+          "name": "hostNameOrIP",
+          "type": "string",
+          "exportName": "IP"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "exportName": "USER"
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "exportName": "PWD"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "default": "22"
+        },
+        {
+          "name": "passwordAuthentication",
+          "type": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "default": " "
+        }
+      ],
+      "outBinding": [
+        {
+          "name": "result",
+          "type": "string",
+          "exportName": "nsDeleteResult"
+        }
+      ],
+      "nextStep": "END"
+    }
+  ]
+}

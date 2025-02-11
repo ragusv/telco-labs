@@ -1,0 +1,263 @@
+{
+  "id": "instantiate_start",
+  "name": "InstantiateStart",
+  "implementation": "../Artifacts/workflows/InstantiateStart-1664111225032.json",
+  "description": "",
+  "version": "1.0",
+  "schemaVersion": "2.0",
+  "startStep": "step0",
+  "variables": [
+    {
+      "name": "vnfId",
+      "type": "string",
+      "description": "Value would be assigned by the system during workflow execution",
+      "default": "null",
+      "required": false
+    },
+    {
+      "name": "WORKING_DIR",
+      "type": "string",
+      "default": "/tmp",
+      "description": "",
+      "required": false
+    },
+    {
+      "name": "NAD_FILE_PATH",
+      "type": "string",
+      "default": "/tmp/nad_ueran.yaml",
+      "description": "",
+      "required": false
+    }
+  ],
+  "input": [
+    {
+      "name": "USER",
+      "description": "K8s master password",
+      "type": "string",
+      "default": "{{vim.k8sCluster.masterNode.username}}",
+      "required": true
+    },
+    {
+      "name": "PWD",
+      "description": "K8s master password",
+      "type": "password",
+      "default": "e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=",
+      "required": true
+    },
+    {
+      "name": "IP",
+      "description": "K8s master ip address",
+      "type": "string",
+      "default": "{{vim.k8sCluster.masterNode.ip}}",
+      "required": true
+    },
+    {
+      "name": "K8S_NAMESPACE",
+      "type": "string",
+      "default": "ueran",
+      "description": "K8S namespace for ueran",
+      "required": true
+    },
+    {
+      "name": "NAD_FILE",
+      "type": "file",
+      "default": "null",
+      "description": "",
+      "required": true
+    }
+  ],
+  "output": [
+    {
+      "name": "FINAL_OUTPUT",
+      "description": "Final Output",
+      "type": "string",
+      "default": "null",
+      "required": false
+    },
+    {
+      "name": "nsCreateResult",
+      "type": "string",
+      "default": "null",
+      "description": "",
+      "required": false
+    },
+    {
+      "name": "copyNADResult",
+      "type": "string",
+      "default": "null",
+      "description": "",
+      "required": false
+    },
+    {
+      "name": "nadCreateResult",
+      "type": "string",
+      "default": "null",
+      "description": "",
+      "required": false
+    },
+    {
+      "name": "nsDeleteResult",
+      "type": "string"
+    },
+    {
+      "name": "nadDeleteResult",
+      "type": "string"
+    }
+  ],
+  "steps": [
+    {
+      "stepId": "step0",
+      "workflow": "RUN_SSH_COMMAND_IN_GUEST",
+      "namespace": "nfv",
+      "type": "task",
+      "description": "Create namespace for ueran",
+      "inBinding": [
+        {
+          "name": "cmd",
+          "type": "string",
+          "default": "kubectl get namespace {{K8S_NAMESPACE}} || kubectl create namespace {{K8S_NAMESPACE}}"
+        },
+        {
+          "name": "hostNameOrIP",
+          "type": "string",
+          "exportName": "IP"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "exportName": "USER"
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "exportName": "PWD"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "default": "22"
+        },
+        {
+          "name": "passwordAuthentication",
+          "type": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "default": " "
+        }
+      ],
+      "outBinding": [
+        {
+          "name": "result",
+          "type": "string",
+          "exportName": "nsCreateResult"
+        }
+      ],
+      "nextStep": "step1"
+    },
+    {
+      "workflow": "COPY_FILE_TO_GUEST",
+      "namespace": "nfv",
+      "inBinding": [
+        {
+          "name": "initialDelay",
+          "type": "number",
+          "default": "30"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "exportName": "USER"
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "exportName": "PWD"
+        },
+        {
+          "name": "inFile",
+          "type": "file",
+          "exportName": "NAD_FILE"
+        },
+        {
+          "name": "destinationFileName",
+          "type": "string",
+          "default": "nad_ueran.yaml"
+        },
+        {
+          "name": "workingDirectory",
+          "type": "string",
+          "exportName": "WORKING_DIR"
+        },
+        {
+          "name": "ip",
+          "type": "string",
+          "exportName": "IP"
+        }
+      ],
+      "outBinding": [
+        {
+          "name": "result",
+          "type": "string",
+          "exportName": "copyNADResult"
+        }
+      ],
+      "stepId": "step1",
+      "description": "copy NAD file to K8s cp node",
+      "nextStep": "step2"
+    },
+    {
+      "workflow": "RUN_SSH_COMMAND_IN_GUEST",
+      "namespace": "nfv",
+      "inBinding": [
+        {
+          "name": "cmd",
+          "type": "string",
+          "default": "cat {{NAD_FILE_PATH}} | kubectl -n {{K8S_NAMESPACE}} apply -f -"
+        },
+        {
+          "name": "hostNameOrIP",
+          "type": "string",
+          "exportName": "IP"
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "exportName": "USER"
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "exportName": "PWD"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "default": "22"
+        },
+        {
+          "name": "passwordAuthentication",
+          "type": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "encoding",
+          "type": "string",
+          "default": " "
+        }
+      ],
+      "outBinding": [
+        {
+          "name": "result",
+          "type": "string",
+          "exportName": "nadCreateResult"
+        }
+      ],
+      "stepId": "step2",
+      "description": "apply NAD File",
+      "nextStep": "END"
+    }
+  ]
+}

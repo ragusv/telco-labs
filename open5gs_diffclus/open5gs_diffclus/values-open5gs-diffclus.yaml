@@ -1,0 +1,63 @@
+hss:
+  enabled: false
+
+mme:
+  enabled: false
+
+pcrf:
+  enabled: false
+
+smf:
+  config:
+    pcrf:
+      enabled: false
+
+# if uernasim is installed on separate cluster, then AMF NGAP needs to be exposed (by NodePort). Otherwise, delete amf block and ClusterIP will be used by default
+
+amf:
+  services:
+    ngap:
+      type: LoadBalancer
+      loadBalancerIP: 192.168.1.155
+
+upf:
+  # in case using separate intf for dataplane/N3. if not, delete/comment all UPF section
+  podAnnotations: { k8s.v1.cni.cncf.io/networks: '[ { "name": "n3","ips": [ "192.168.2.250" ] } ]' }
+  config:
+    upf:
+      gtpu:
+        dev: "net1"
+        advertise: "192.168.2.250"
+          #    subnetList:
+          #      - addr: 10.45.0.1/16
+          #        dnn: internet
+          #        dev: ogstun
+          #        createDev: false
+          #        enableNAT: true
+
+sgwc:
+  enabled: false
+
+sgwu:
+  enabled: false
+
+webui:
+  services:
+  # expose webui via NP only in case LB/Ingress is not available, Change port if needed. Access on open5gs_workernode:30000
+    #http:
+      #type: NodePort
+      #nodePorts:
+        #http: "30000"
+    # if you want to expose it via LB - if static ip is not needed, then just commet line. Access on LB_IP:3000
+    http:
+      type: LoadBalancer
+      loadBalancerIP: 192.168.1.156
+  ingress:
+    enabled: false
+
+populate:
+  enabled: true
+  initCommands:
+  - open5gs-dbctl add_ue_with_slice 999700000000001 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 111111
+  - open5gs-dbctl add_ue_with_slice 999700000000002 465B5CE8B199B49FAA5F0A2EE238A6BC E8ED289DEBA952E4283B54E88E6183CA internet 1 111111
+

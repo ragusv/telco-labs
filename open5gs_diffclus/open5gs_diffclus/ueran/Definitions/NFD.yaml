@@ -1,0 +1,289 @@
+tosca_definitions_version: tosca_simple_yaml_1_2
+description: Network Function description
+imports:
+  - etsi_nfv_sol001_common_2_7_1_types.yaml
+  - etsi_nfv_sol001_vnfd_2_7_1_types.yaml
+  - vmware_nfv_custom_vnfd_2_7_1_types.yaml
+node_types:
+  tosca.nodes.nfv.VMware.CNF.ueran-p5g:
+    derived_from: tosca.nodes.nfv.VMware.CNF
+    interfaces:
+      Vnflcm:
+        type: tosca.interfaces.nfv.VMware.Vnflcm
+  tosca.nodes.nfv.Vdu.Compute.Helm.ueransim-gnb:
+    derived_from: tosca.nodes.nfv.Vdu.Compute.Helm
+    properties:
+      configurable_properties:
+        type: tosca.datatypes.nfv.VnfcConfigurableProperties.ueransim-gnb
+        required: true
+data_types:
+  tosca.datatypes.nfv.VnfcConfigurableProperties.ueransim-gnb:
+    derived_from: tosca.datatypes.nfv.VnfcConfigurableProperties
+    properties:
+      additional_vnfc_configurable_properties:
+        type: tosca.datatypes.nfv.VnfcAdditionalConfigurableProperties.ueransim-gnb
+        description: Describes additional configuration for VNFC that can be configured
+        required: true
+  tosca.datatypes.nfv.VnfcAdditionalConfigurableProperties.ueransim-gnb:
+    derived_from: tosca.datatypes.nfv.VnfcAdditionalConfigurableProperties
+    properties:
+      N3:
+        required: true
+        propertyName: N3
+        description: Select Network for Interface N3
+        default: ''
+        type: string
+        format: network
+      N3_MTU:
+        required: false
+        propertyName: N3_MTU
+        description: Provide Network MTU for N3
+        default: ''
+        type: number
+        format: number
+      values:
+        required: false
+        propertyName: values
+        description: values.yaml override for ueran
+        default: ''
+        type: string
+        format: file
+  tosca.datatypes.nfv.VMware.Interface.instantiate_startInputParameters:
+    derived_from: tosca.datatypes.nfv.VnfOperationAdditionalParameters
+    properties:
+      USER:
+        name: USER
+        type: string
+        description: K8s master password
+        required: true
+        default: '{{vim.k8sCluster.masterNode.username}}'
+        format: string
+      PWD:
+        name: PWD
+        type: string
+        description: K8s master password
+        required: true
+        default: e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=
+        format: password
+      IP:
+        name: IP
+        type: string
+        description: K8s master ip address
+        required: true
+        default: '{{vim.k8sCluster.masterNode.ip}}'
+        format: string
+      K8S_NAMESPACE:
+        name: K8S_NAMESPACE
+        type: string
+        description: K8S namespace for ueran
+        required: true
+        default: ueran
+        format: string
+      NAD_FILE:
+        name: NAD_FILE
+        type: string
+        description: ''
+        required: true
+        default: 'null'
+        format: file
+  tosca.datatypes.nfv.VMware.Interface.instantiate_startOutputParameters:
+    derived_from: tosca.datatypes.nfv.VnfOperationAdditionalParameters
+    properties:
+      FINAL_OUTPUT:
+        name: FINAL_OUTPUT
+        type: string
+        description: Final Output
+      nsCreateResult:
+        name: nsCreateResult
+        type: string
+        description: ''
+      copyNADResult:
+        name: copyNADResult
+        type: string
+        description: ''
+      nadCreateResult:
+        name: nadCreateResult
+        type: string
+        description: ''
+      nsDeleteResult:
+        name: nsDeleteResult
+        type: string
+        description: ''
+      nadDeleteResult:
+        name: nadDeleteResult
+        type: string
+        description: ''
+  tosca.datatypes.nfv.VMware.Interface.TerminateEndInputParameters:
+    derived_from: tosca.datatypes.nfv.VnfOperationAdditionalParameters
+    properties:
+      USER:
+        name: USER
+        type: string
+        description: Username
+        required: true
+        default: '{{vim.k8sCluster.masterNode.username}}'
+        format: string
+      PWD:
+        name: PWD
+        type: string
+        description: Password
+        required: true
+        default: e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=
+        format: password
+      IP:
+        name: IP
+        type: string
+        description: Hostname
+        required: true
+        default: '{{vim.k8sCluster.masterNode.ip}}'
+        format: string
+      K8S_NAMESPACE:
+        name: K8S_NAMESPACE
+        type: string
+        description: ''
+        required: true
+        default: ueran
+        format: string
+  tosca.datatypes.nfv.VMware.Interface.TerminateEndOutputParameters:
+    derived_from: tosca.datatypes.nfv.VnfOperationAdditionalParameters
+    properties:
+      FINAL_OUTPUT:
+        name: FINAL_OUTPUT
+        type: string
+        description: Final Output
+      nsDeleteResult:
+        name: nsDeleteResult
+        type: string
+        description: ''
+      nadDeleteResult:
+        name: nadDeleteResult
+        type: string
+        description: ''
+topology_template:
+  substitution_mappings:
+    node_type: tosca.nodes.nfv.VMware.CNF.ueran-p5g
+  node_templates:
+    ueransim-p5g:
+      type: tosca.nodes.nfv.VMware.CNF.ueran-p5g
+      properties:
+        descriptor_id: nfd_451d2785-54c1-414c-acf7-1ee1a3ce8aec
+        provider: rvidyashanka@vmware.com
+        product_name: UERanSim
+        version: '1.0'
+        id: id
+        software_version: 3.2.6
+        descriptor_version: 3.2.6
+        flavour_id: default
+        flavour_description: default
+        vnfm_info:
+          - gvnfmdriver
+        infra_requirements:
+          node_components:
+            iommuEnabled: false
+            network:
+              devices:
+                - deviceType: vmxnet3
+                  networkName: N3
+                  interfaceName: N3
+                  resourceName: N3
+                  count: 1
+                  isSharedAcrossNuma: false
+                  additionalProperties:
+                    mtu: N3_MTU
+        description: Network Function description
+      interfaces:
+        Vnflcm:
+          instantiate_start:
+            implementation: ../Artifacts/workflows/InstantiateStart-1664111225032.json
+            description: ''
+            inputs:
+              type: >-
+                tosca.datatypes.nfv.VMware.Interface.instantiate_startInputParameters
+              USER: '{{vim.k8sCluster.masterNode.username}}'
+              PWD: e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=
+              IP: '{{vim.k8sCluster.masterNode.ip}}'
+              K8S_NAMESPACE: ueran
+              NAD_FILE: 'null'
+            outputs:
+              type: >-
+                tosca.datatypes.nfv.VMware.Interface.instantiate_startOutputParameters
+              FINAL_OUTPUT: ''
+              nsCreateResult: ''
+              copyNADResult: ''
+              nadCreateResult: ''
+              nsDeleteResult: ''
+              nadDeleteResult: ''
+          terminate_end:
+            implementation: >-
+              ../Artifacts/workflows/_Artifacts_workflows_TerminateEnd-1664133968287
+              (1).json
+            description: ''
+            inputs:
+              type: tosca.datatypes.nfv.VMware.Interface.TerminateEndInputParameters
+              USER: '{{vim.k8sCluster.masterNode.username}}'
+              PWD: e3t2aW0uazhzQ2x1c3Rlci5tYXN0ZXJOb2RlLnBhc3N3b3JkfX0=
+              IP: '{{vim.k8sCluster.masterNode.ip}}'
+              K8S_NAMESPACE: ueran
+            outputs:
+              type: >-
+                tosca.datatypes.nfv.VMware.Interface.TerminateEndOutputParameters
+              FINAL_OUTPUT: 'null'
+              nsDeleteResult: 'null'
+              nadDeleteResult: 'null'
+    ueransim-gnb:
+      type: tosca.nodes.nfv.Vdu.Compute.Helm.ueransim-gnb
+      properties:
+        name: ueransim-gnb
+        description: ueransim-gnb
+        chartName: ueransim-gnb
+        chartVersion: 0.2.5
+        helmVersion: v3
+        configurable_properties:
+          additional_vnfc_configurable_properties:
+            N3: ''
+            N3_MTU: ''
+            values: ''
+  policies:
+    - policy_scale:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: scale
+          interface_type: operation
+          isEnabled: true
+    - policy_workflow:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: workflow
+          interface_type: operation
+          isEnabled: true
+    - policy_reconfigure:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: reconfigure
+          interface_type: operation
+          isEnabled: true
+    - policy_update:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: update
+          interface_type: operation
+          isEnabled: true
+    - policy_upgrade:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: upgrade
+          interface_type: operation
+          isEnabled: true
+    - policy_upgrade_package:
+        type: tosca.policies.nfv.VMware.SupportedVnfInterface
+        properties:
+          interface_name: upgrade_package
+          interface_type: operation
+          isEnabled: true
+interface_types:
+  tosca.interfaces.nfv.VMware.Vnflcm:
+    derived_from: tosca.interfaces.nfv.Vnflcm
+    instantiate_start:
+      description: interface description
+    terminate_end:
+      description: interface description

@@ -1,0 +1,8 @@
+metadata:
+vnfd_id: 
+vnf_provider_id: 
+vnf_product_name: 
+vnf_release_date_time : 2022-09-18T13:53:36.665925
+vnf_software_version: 
+compatible_specification_versions: 2.7.1
+vnfm_info: 
